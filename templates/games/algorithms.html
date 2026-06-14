@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .algo-main-card {
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        padding: 1.8rem;
+        box-shadow: var(--shadow-sm);
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .algo-board-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .algo-drop-zone {
+        background: var(--bg-milky);
+        border: 2px dashed var(--border-light);
+        border-radius: 16px;
+        padding: 1.2rem;
+        min-height: 300px;
+        transition: all 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .algo-drop-zone.drag-over {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: var(--sky-blue);
+    }
+    
+    /* Цветовая изоляция блоков от изменения цвета шрифта на белый/черный */
+    .algo-code-block-item {
+        background: #282C34 !important;
+        color: #ABB2BF !important;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.95rem;
+        cursor: grab;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border: 1px solid #1E2227;
+        transition: transform 0.15s, opacity 0.15s;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+    }
+    
+    .algo-code-block-item:active { cursor: grabbing; transform: scale(0.98); }
+    .algo-code-block-item.dragging { opacity: 0.4; }
+
+    @media (max-width: 768px) {
+        .algo-main-card { padding: 1.2rem 1rem; }
+        .algo-board-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+        .algo-drop-zone { min-height: 220px; padding: 0.8rem; }
+        .algo-code-block-item { padding: 0.8rem 1.2rem; font-size: 0.85rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="algo-main-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="margin: 0; font-weight: 900; letter-spacing: -0.5px; color: var(--text-dark);">Алгоритмы 🧩</h2>
+        <a href="{{ url_for('games_hub') }}" style="color: var(--text-gray); font-weight: 700; text-decoration: none; font-size: 0.95rem;">Выйти</a>
+    </div>
+    
+    <p style="color: var(--text-gray); margin-bottom: 2rem; line-height: 1.5; font-size: 0.95rem;">
+        <strong>Миссия:</strong> {{ task.description }}<br>
+        Перетащи блоки из левой колонки в правую в правильном порядке. Проходить упражнение можно сколько угодно раз!
+    </p>
+
+    <div class="algo-board-grid">
+        <div>
+            <h4 style="margin: 0 0 1rem 0; color: var(--text-gray); text-align: center; font-weight: 700; font-size: 0.95rem;">Фрагменты кода</h4>
+            <div class="algo-drop-zone" id="source-zone">
+                {% for block in blocks %}
+                    <div class="algo-code-block-item" draggable="true" data-id="{{ block.id }}">{{ block.code }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div>
+            <h4 style="margin: 0 0 1rem 0; color: var(--text-gray); text-align: center; font-weight: 700; font-size: 0.95rem;">Твое решение</h4>
+            <div class="algo-drop-zone" id="target-zone"></div>
+        </div>
+    </div>
+
+    <button id="checkBtn" class="btn" style="width: 100%; padding: 1.2rem; font-size: 1.2rem; font-weight: 700; border-radius: 16px;" onclick="checkSolution()">Проверить алгоритм</button>
+    
+    <div id="resultMsg" style="display: none; text-align: center; margin-top: 1.5rem;">
+        <h3 id="resultTitle" style="font-weight: 800; color: var(--text-dark);"></h3>
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+            <button class="btn btn-outline" onclick="location.reload()">🔄 Начать сначала</button>
+            <a href="{{ url_for('games_hub') }}" class="btn">В игровой хаб</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const codeBlocks = document.querySelectorAll('.algo-code-block-item');
+    const zones = document.querySelectorAll('.algo-drop-zone');
+    
+    codeBlocks.forEach(block => {
+        block.addEventListener('dragstart', () => { block.classList.add('dragging'); });
+        block.addEventListener('dragend', () => { block.classList.remove('dragging'); });
+    });
+    
+    zones.forEach(zone => {
+        zone.addEventListener('dragover', e => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+            const afterElement = getDragAfterElement(zone, e.clientY);
+            const draggable = document.querySelector('.dragging');
+            if (afterElement == null) {
+                zone.appendChild(draggable);
+            } else {
+                zone.insertBefore(draggable, afterElement);
+            }
+        });
+        
+        zone.addEventListener('dragleave', () => { zone.classList.remove('drag-over'); });
+        zone.addEventListener('drop', () => { zone.classList.remove('drag-over'); });
+    });
+
+    // Мобильная эмуляция Drag-and-Drop тачем
+    let touchMovingItem = null;
+
+    codeBlocks.forEach(block => {
+        block.addEventListener('touchstart', function(e) {
+            touchMovingItem = this;
+            this.classList.add('dragging');
+        }, { passive: true });
+
+        block.addEventListener('touchmove', function(e) {
+            e.preventDefault(); 
+            const touchLocation = e.touches[0];
+            
+            zones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (touchLocation.clientX >= rect.left && touchLocation.clientX <= rect.right &&
+                    touchLocation.clientY >= rect.top && touchLocation.clientY <= rect.bottom) {
+                    zones.forEach(z => z.classList.remove('drag-over'));
+                    zone.classList.add('drag-over');
+                }
+            });
+        }, { passive: false });
+
+        block.addEventListener('touchend', function(e) {
+            this.classList.remove('dragging');
+            const touch = e.changedTouches[0];
+            
+            zones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    
+                    const afterElement = getDragAfterElement(zone, touch.clientY);
+                    if (afterElement == null) {
+                        zone.appendChild(touchMovingItem);
+                    } else {
+                        zone.insertBefore(touchMovingItem, afterElement);
+                    }
+                }
+                zone.classList.remove('drag-over');
+            });
+            touchMovingItem = null;
+        });
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.algo-code-block-item:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    async function checkSolution() {
+        const targetZone = document.getElementById('target-zone');
+        const currentOrder = [...targetZone.querySelectorAll('.algo-code-block-item')].map(b => b.getAttribute('data-id'));
+        
+        if (currentOrder.length === 0) {
+            alert("Ты ничего не перетащил в зону решения!");
+            return;
+        }
+
+        const response = await fetch('/api/check-algo', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ task_id: {{ task.id }}, order: currentOrder })
+        });
+        const data = await response.json();
+        
+        document.getElementById('resultMsg').style.display = 'block';
+        
+        if(data.correct) {
+            document.getElementById('resultTitle').innerHTML = `Успех! Логика идеальна. 🎉<br><span style="color: var(--success); font-size: 1rem;">Материал закреплен!</span>`;
+            targetZone.style.borderColor = "var(--success)";
+            targetZone.style.background = "rgba(16, 185, 129, 0.08)";
+        } else {
+            document.getElementById('resultTitle').innerHTML = `<span style="color: var(--error);">Алгоритм не работает 💡</span>`;
+            targetZone.style.borderColor = "var(--error)";
+            alert("Ошибка в логике или отступах. Попробуй поменять порядок блоков!");
+        }
+    }
+</script>
+{% endblock %}

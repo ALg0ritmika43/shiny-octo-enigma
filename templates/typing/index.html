@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<style>
+    .typing-card-wrapper {
+        max-width: 100%;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        padding: 1.8rem;
+        box-shadow: var(--shadow-sm);
+        box-sizing: border-box;
+    }
+
+    .typing-difficulty-row {
+        margin-bottom: 1.8rem; 
+        display: flex; 
+        gap: 0.8rem;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .typing-difficulty-row .btn-outline {
+        flex: 1;
+        min-width: 95px;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 700;
+        border-radius: 12px;
+    }
+
+    .typing-stats-panel { 
+        display: flex; 
+        justify-content: space-around; 
+        margin-bottom: 1.8rem; 
+        font-size: 1.1rem; 
+        font-weight: 800; 
+        color: var(--text-dark); 
+        background: var(--bg-milky);
+        padding: 0.9rem;
+        border-radius: 14px;
+        border: 1px solid var(--border-light);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .typing-sandbox-display {
+        font-family: 'Fira Code', 'Courier New', monospace;
+        font-size: 1.3rem; 
+        background: var(--code-bg); 
+        color: #94A3B8;
+        padding: 1.8rem;
+        border-radius: 18px; 
+        border: 2px solid var(--border-light);
+        margin-bottom: 1.5rem; 
+        position: relative; 
+        letter-spacing: 1px;
+        line-height: 1.6;
+        box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        outline: none;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-width: 100%;
+        box-sizing: border-box;
+        cursor: text;
+    }
+
+    .typing-sandbox-display:focus {
+        border-color: var(--sky-blue);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), inset 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .char { color: #64748B; transition: all 0.1s ease; }
+    .char.correct { color: var(--success); font-weight: 800; }
+    .char.incorrect { color: #FFFFFF; background-color: var(--error); border-radius: 4px; padding: 0 2px; }
+    .char.active { border-bottom: 3px solid var(--sky-blue); animation: blink 1s infinite; }
+
+    @keyframes blink { 50% { border-bottom-color: transparent; } }
+
+    @media (max-width: 600px) {
+        .typing-card-wrapper { padding: 1.2rem 1rem; }
+        .typing-difficulty-row { gap: 0.5rem; }
+        .typing-difficulty-row .btn-outline { padding: 0.6rem; font-size: 0.85rem; }
+        .typing-stats-panel { font-size: 0.95rem; padding: 0.7rem; }
+        .typing-sandbox-display { font-size: 1.05rem; padding: 1.2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="typing-card-wrapper">
+    <h2 style="margin-bottom: 0.4rem; font-weight: 900; letter-spacing: -0.5px;">Тренажер скоростной печати ⚡</h2>
+    <p style="color: var(--text-gray); font-size: 0.95rem; margin-bottom: 1.5rem;">Развивайте мышечную память синтаксиса. Выберите сложность и начните вводить подсвеченный код.</p>
+    
+    <div class="typing-difficulty-row">
+        <button class="btn btn-outline" onclick="loadText('easy')">Junior</button>
+        <button class="btn btn-outline" onclick="loadText('medium')">Middle</button>
+        <button class="btn btn-outline" onclick="loadText('hard')">Senior</button>
+    </div>
+
+    <div class="typing-stats-panel">
+        <div>Скорость: <span id="wpm" style="color: var(--sky-blue)">0</span> <span style="font-size: 0.8rem; color: var(--text-gray); font-weight: 500;">зн/мин</span></div>
+        <div>Точность: <span id="accuracy" style="color: var(--success)">100</span>%</div>
+    </div>
+
+    <div class="typing-sandbox-display" id="typingDisplay" tabindex="0">Нажмите на любую кнопку сложности выше, чтобы сгенерировать клавиатурную сессию...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentText = "";
+    let charIndex = 0;
+    let mistakes = 0;
+    let isTyping = false;
+    let startTime;
+    let currentDifficulty = 'easy';
+
+    async function loadText(difficulty) {
+        currentDifficulty = difficulty;
+        const res = await fetch('/api/get-typing-exercise', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({difficulty: difficulty})
+        });
+        const data = await res.json();
+        currentText = data.text;
+        charIndex = 0; mistakes = 0; isTyping = false;
+        
+        const display = document.getElementById('typingDisplay');
+        display.innerHTML = currentText.split('').map(c => `<span class="char">${c}</span>`).join('');
+        
+        const firstChar = display.querySelector('span');
+        if (firstChar) firstChar.classList.add('active');
+        display.focus();
+        
+        document.getElementById('wpm').innerText = 0;
+        document.getElementById('accuracy').innerText = 100;
+    }
+
+    document.getElementById('typingDisplay').addEventListener('keydown', async (e) => {
+        if(!currentText || e.key.length !== 1) return; 
+        if (!isTyping) { isTyping = true; startTime = new Date(); }
+        
+        const chars = document.querySelectorAll('.char');
+        if (charIndex < chars.length) {
+            const expected = currentText[charIndex];
+            chars[charIndex].classList.remove('active');
+            
+            if (e.key === expected) {
+                chars[charIndex].classList.add('correct');
+            } else {
+                chars[charIndex].classList.add('incorrect');
+                mistakes++;
+            }
+            
+            charIndex++;
+            if (charIndex < chars.length) {
+                chars[charIndex].classList.add('active');
+            } else {
+                isTyping = false;
+                const timeTaken = (new Date() - startTime) / 1000 / 60; 
+                const words = currentText.length / 5;
+                const wpm = Math.round(words / timeTaken);
+                const accuracy = Math.round(((currentText.length - mistakes) / currentText.length) * 100);
+                
+                document.getElementById('wpm').innerText = wpm;
+                document.getElementById('accuracy').innerText = accuracy;
+                
+                await fetch('/api/typing-score', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({difficulty: currentDifficulty, wpm: wpm, accuracy: accuracy})
+                });
+                
+                alert(`Великолепно! Скорость: ${wpm} WPM.`);
+                loadText(currentDifficulty); 
+            }
+        }
+    });
+
+    document.getElementById('typingDisplay').addEventListener('click', function() { this.focus(); });
+</script>
+{% endblock %}

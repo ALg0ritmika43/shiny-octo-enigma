@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сертификат - {{ user.username }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #e0e6ed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .cert-container {
+            width: 900px;
+            height: 636px; /* Пропорции А4 Landscape */
+            background: white;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+            background-image: radial-gradient(circle, #ffffff, #fdfbf5);
+        }
+
+        .cert-border {
+            width: 100%;
+            height: 100%;
+            border: 15px solid #1A2980;
+            padding: 10px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .cert-inner-border {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #D4AF37; /* Золотой цвет */
+            box-sizing: border-box;
+            text-align: center;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1A2980;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem;
+            color: #D4AF37;
+            margin: 10px 0 0 0;
+            letter-spacing: 5px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+            margin-bottom: 40px;
+        }
+
+        .presented-to {
+            font-size: 1.2rem;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .name {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            color: #111;
+            margin: 0;
+            border-bottom: 2px solid #D4AF37;
+            display: inline-block;
+            padding: 0 40px 10px 40px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            color: #444;
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 40px;
+            padding: 0 40px;
+        }
+
+        .signature-block {
+            text-align: center;
+        }
+
+        .signature {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 2rem;
+            color: #1A2980;
+            margin: 0;
+            border-bottom: 1px solid #777;
+            padding: 0 20px 5px 20px;
+            width: 200px;
+        }
+
+        .signature-title {
+            font-size: 0.9rem;
+            color: #777;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Чтобы кнопка печати не появлялась на самом распечатанном сертификате */
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1A2980;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: 0.2s;
+        }
+        .print-btn:hover { background: #131e60; }
+
+        @media print {
+            body { background: white; }
+            .cert-container { box-shadow: none; width: 100%; height: 100vh; padding: 0; }
+            .print-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="print-btn" onclick="window.print()">🖨️ Распечатать / Сохранить в PDF</button>
+
+    <div class="cert-container">
+        <div class="cert-border">
+            <div class="cert-inner-border">
+                
+                <div>
+                    <div class="logo">PyLearn</div>
+                    <h1 class="title">СЕРТИФИКАТ</h1>
+                    <div class="subtitle">об успешном окончании курса</div>
+                </div>
+
+                <div>
+                    <div class="presented-to">Настоящим подтверждается, что</div>
+                    <h2 class="name">{{ user.username }}</h2>
+                    <div class="description">
+                        успешно завершил(а) полный интерактивный курс по программированию на языке <b>Python</b>. <br>
+                        Студент продемонстрировал отличные знания базового синтаксиса, алгоритмов, <br>
+                        объектно-ориентированного программирования и структуры данных.
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div class="signature-block">
+                        <div class="signature">{{ date }}</div>
+                        <div class="signature-title">Дата выдачи</div>
+                    </div>
+                    
+                    <div style="width: 80px; height: 80px; background: #D4AF37; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px dashed white; box-shadow: 0 0 0 3px #D4AF37;">
+                        <span style="color: white; font-weight: bold; font-size: 1.5rem;">100%</span>
+                    </div>
+
+                    <div class="signature-block">
+                        <div class="signature">PyLearn Team</div>
+                        <div class="signature-title">Основатель Платформы</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

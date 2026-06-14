@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .detail-main-card {
+        text-align: center;
+        border-radius: 28px;
+        padding: 3rem 2rem;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .detail-avatar-large {
+        font-size: 4.5rem;
+        margin-bottom: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100px;
+        height: 100px;
+        border-radius: 24px;
+        background: var(--bg-milky);
+    }
+
+    .detail-title {
+        font-size: 2.2rem;
+        font-weight: 900;
+        color: var(--text-dark);
+        margin: 0 0 0.6rem 0;
+        letter-spacing: -0.5px;
+    }
+
+    .detail-subtitle {
+        color: var(--text-gray);
+        font-size: 1.05rem;
+        max-width: 600px;
+        margin: 0 auto 2rem auto;
+        line-height: 1.5;
+    }
+
+    .detail-actions-flex {
+        display: flex;
+        justify-content: center;
+        gap: 1.2rem;
+        margin-bottom: 2.5rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-actions-flex .btn {
+        min-width: 180px;
+        padding: 0.95rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 14px;
+    }
+
+    .detail-steps-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: var(--bg-milky);
+        border-radius: 20px;
+        border: 1px solid var(--border-light);
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .step-circle-badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.05rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: var(--shadow-sm);
+        text-decoration: none;
+    }
+
+    .step-circle-badge:hover {
+        transform: scale(1.1);
+    }
+
+    .step-completed {
+        background: var(--success);
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .step-todo {
+        background: var(--surface-white);
+        border: 2px solid var(--border-light);
+        color: var(--text-gray);
+    }
+
+    @media (max-width: 600px) {
+        .detail-main-card { padding: 2rem 1rem; }
+        .detail-title { font-size: 1.7rem; }
+        .detail-actions-flex { flex-direction: column; width: 100%; gap: 0.8rem; }
+        .detail-actions-flex .btn { width: 100%; }
+        .detail-steps-grid { padding: 1rem 0.5rem; gap: 0.6rem; }
+        .step-circle-badge { width: 44px; height: 44px; font-size: 0.95rem; }
+    }
+</style>
+
+<div class="detail-main-card" style="border-top: 6px solid {{ track.color }};">
+    <div class="detail-avatar-large" style="background-color: {{ track.color }}12;">{{ track.icon }}</div>
+    <h2 class="detail-title">{{ track.title }}</h2>
+    <p class="detail-subtitle">{{ track.subtitle }}</p>
+    
+    <div class="detail-actions-flex">
+        <a href="{{ url_for('track_theory', track_id=track.id) }}" class="btn btn-outline" style="border-color: {{ track.color }}; color: {{ track.color }};">
+            📖 Читать теорию
+        </a>
+        {% if next_task_id %}
+            <a href="{{ url_for('task', track_id=track.id, task_id=next_task_id) }}" class="btn" style="background-color: {{ track.color }}; box-shadow: 0 4px 14px {{ track.color }}40;">
+                🚀 Продолжить трек
+            </a>
+        {% else %}
+            <a href="{{ url_for('task', track_id=track.id, task_id=track.tasks[0].id) }}" class="btn" style="background-color: var(--sky-blue); box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);">
+                🔄 Повторить трек сначала
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="detail-steps-grid">
+        {% for task in track.tasks %}
+            {% if task.id in completed_ids %}
+                <a href="{{ url_for('task', track_id=track.id, task_id=task.id) }}" class="step-circle-badge step-completed" title="Повторить шаг {{ loop.index }}">
+                    ✓
+                </a>
+            {% else %}
+                <a href="{{ url_for('task', track_id=track.id, task_id=task.id) }}" class="step-circle-badge step-todo" title="Начать шаг {{ loop.index }}">
+                    {{ loop.index }}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

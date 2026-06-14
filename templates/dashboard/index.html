@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h2>Привет, {{ user.username }}! 👋</h2>
+        <p style="color: var(--text-gray);">Продолжай в том же духе. Твой опыт: <strong style="color: var(--sky-blue);">{{ user.xp }} XP</strong></p>
+    </div>
+</div>
+
+<h3 style="margin-bottom: 1rem; color: var(--text-dark);">Твоя детальная статистика</h3>
+<div style="display: grid; gap: 1.5rem;">
+    {% for track in tracks %}
+    <div class="card" style="margin: 0;">
+        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+            <div style="font-size: 2.5rem; margin-right: 1.5rem; background: {{ track.color }}20; padding: 1rem; border-radius: 16px;">
+                {{ track.icon }}
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between;">
+                    <h4 style="color: var(--text-dark); margin-bottom: 0.2rem; font-size: 1.2rem;">{{ track.title }}</h4>
+                    <span style="font-weight: bold; color: {{ track.color }};">{{ progress[track.id].percent }}% изучено</span>
+                </div>
+                <p style="color: var(--text-gray); font-size: 0.9rem;">Ошибок/Попыток всего: <strong>{{ progress[track.id].total_attempts }}</strong></p>
+                
+                <div style="margin-top: 0.8rem; background: var(--border-light); height: 8px; border-radius: 4px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="background: {{ track.color }}; height: 100%; width: {{ progress[track.id].percent }}%; transition: width 1s ease-in-out;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: var(--bg-milky); padding: 1rem; border-radius: 12px; border: 1px solid var(--border-light);">
+            <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 0.8rem; text-transform: uppercase; font-weight: bold;">Карта заданий:</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                {% for task in track.tasks %}
+                    {% set p = progress[track.id].tasks_detail.get(task.id) %}
+                    
+                    {% if p and p.completed %}
+                        {% if p.attempts == 1 %}
+                            <div title="Задание {{ loop.index }}: Решено идеально" style="width: 35px; height: 35px; border-radius: 8px; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 5px rgba(46,204,113,0.4);">{{ loop.index }}</div>
+                        {% else %}
+                            <div title="Задание {{ loop.index }}: Решено за {{ p.attempts }} попыток" style="width: 35px; height: 35px; border-radius: 8px; background: var(--warning); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 5px rgba(241,196,15,0.4);">{{ loop.index }}</div>
+                        {% endif %}
+                    {% elif p and not p.completed %}
+                        <div title="Задание {{ loop.index }}: {{ p.attempts }} неудачных попыток" style="width: 35px; height: 35px; border-radius: 8px; background: var(--error); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 5px rgba(231,76,60,0.4);">{{ loop.index }}</div>
+                    {% else %}
+                        <div title="Задание {{ loop.index }}: Не начато" style="width: 35px; height: 35px; border-radius: 8px; background: var(--surface-white); border: 1px solid var(--border-light); color: var(--text-gray); display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">{{ loop.index }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-gray);">
+                <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: var(--success); border-radius: 2px;"></span> С первого раза</span>
+                <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: var(--warning); border-radius: 2px;"></span> С ошибками</span>
+                <span style="display: flex; align-items: center; gap: 0.3rem;"><span style="width: 10px; height: 10px; background: var(--surface-white); border: 1px solid var(--border-light); border-radius: 2px;"></span> Не решено</span>
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 1rem;">
+            <a href="{{ url_for('track_detail', track_id=track.id) }}" class="btn btn-outline" style="padding: 0.5rem 1.5rem;">Продолжить →</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

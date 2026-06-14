@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 3rem 1.5rem; background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%); background-image: radial-gradient(circle at top right, rgba(139, 92, 246, 0.25), transparent 60%), radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.15), transparent 50%); border: 1px solid rgba(255, 255, 255, 0.08); color: #FFFFFF; margin-bottom: 2.5rem; box-shadow: var(--shadow-md);">
+    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🎮</div>
+    <h2 style="font-size: 2.4rem; font-weight: 900; margin-bottom: 0.5rem; letter-spacing: -0.5px;">Игровая зона</h2>
+    <p style="color: #94A3B8; font-size: 1rem; max-width: 550px; margin: 0 auto; line-height: 1.6;">Отдыхай с пользой. Прокачивай навыки написания и чтения кода в игровом формате с бесконечным режимом повторения пройденного материала.</p>
+</div>
+
+<style>
+    .games-responsive-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        width: 100%;
+    }
+
+    .game-interactive-card {
+        margin: 0;
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        text-decoration: none;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .game-interactive-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--sky-blue);
+        box-shadow: var(--shadow-md);
+    }
+
+    .game-card-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+        display: inline-block;
+    }
+
+    .game-interactive-card:hover .game-card-icon { transform: scale(1.1) rotate(4deg); }
+    .game-card-title { color: var(--text-dark); font-size: 1.35rem; font-weight: 800; margin: 0 0 0.6rem 0; }
+    .game-card-desc { color: var(--text-gray); font-size: 0.95rem; line-height: 1.5; margin: 0 0 1.8rem 0; flex-grow: 1; }
+    .game-card-btn { width: 100%; box-sizing: border-box; padding: 0.85rem; font-weight: 700; }
+</style>
+
+<div class="games-responsive-grid">
+    <a href="{{ url_for('bug_hunter') }}" class="game-interactive-card">
+        <div>
+            <span class="game-card-icon">🐛</span>
+            <h3 class="game-card-title">Охота на баги</h3>
+            <p class="game-card-desc">Найди и исправь ошибку в чужом коде. Внимательность — главное оружие разработчика.</p>
+        </div>
+        <span class="btn btn-outline game-card-btn">Играть</span>
+    </a>
+
+    <a href="{{ url_for('algo_game') }}" class="game-interactive-card">
+        <div>
+            <span class="game-card-icon">🧩</span>
+            <h3 class="game-card-title">Алгоритмы</h3>
+            <p class="game-card-desc">Собирай код из блоков методом Drag-and-Drop, чтобы выстроить логику скрипта.</p>
+        </div>
+        <span class="btn btn-outline game-card-btn">Играть</span>
+    </a>
+</div>
+{% endblock %}

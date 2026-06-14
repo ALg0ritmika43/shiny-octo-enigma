@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .task-progress-track { 
+        width: 100%; 
+        height: 8px; 
+        background: var(--border-light); 
+        border-radius: 4px; 
+        margin-bottom: 2rem; 
+        overflow: hidden; 
+        border: 1px solid var(--border-light);
+    }
+    
+    .task-progress-fill-line { 
+        height: 100%; 
+        background: var(--grad-accent); 
+        width: {{ (task_number / total_tasks) * 100 }}%; 
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+    }
+    
+    .task-meta-label {
+        color: var(--text-gray); 
+        font-size: 0.85rem; 
+        margin-bottom: 1rem; 
+        text-transform: uppercase; 
+        font-weight: 800;
+        letter-spacing: 0.5px;
+    }
+
+    .task-question-display { 
+        font-size: 1.35rem; 
+        margin-bottom: 2rem; 
+        font-weight: 700; 
+        line-height: 1.5;
+        color: var(--text-dark);
+    }
+    
+    .task-options-vertical-grid { 
+        display: grid; 
+        gap: 0.9rem; 
+        width: 100%;
+    }
+    
+    .interactive-option-button {
+        background: var(--surface-white); 
+        border: 2px solid var(--border-light); 
+        border-radius: 16px;
+        padding: 1.1rem 1.3rem; 
+        font-size: 1.05rem; 
+        font-weight: 600;
+        text-align: left; 
+        cursor: pointer; 
+        transition: all 0.2s ease;
+        color: var(--text-dark);
+        width: 100%;
+        box-sizing: border-box;
+        outline: none;
+    }
+    
+    .interactive-option-button:hover { 
+        border-color: var(--sky-blue); 
+        background: var(--bg-milky); 
+    }
+    
+    .interactive-option-button.selected { 
+        border-color: var(--sky-blue); 
+        background: rgba(59, 130, 246, 0.08); 
+        font-weight: 700; 
+    }
+    
+    .interactive-option-button.correct { 
+        border-color: var(--success) !important; 
+        background: rgba(16, 185, 129, 0.08) !important; 
+        color: var(--success) !important;
+    }
+    
+    .interactive-option-button.wrong { 
+        border-color: var(--error) !important; 
+        background: rgba(239, 68, 68, 0.08) !important; 
+        color: var(--error) !important;
+    }
+
+    .task-result-status-panel {
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: var(--surface-white); 
+        border-radius: 20px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+        display: none; 
+        justify-content: space-between; 
+        align-items: center;
+        gap: 1rem;
+        box-sizing: border-box;
+        width: 100%;
+        animation: panelSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .task-result-status-panel.show { 
+        display: flex; 
+    }
+    
+    @keyframes panelSlideIn {
+        0% { opacity: 0; transform: translateY(15px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-inner-text-block h3 { 
+        margin: 0 0 0.4rem 0; 
+        font-weight: 800;
+        font-size: 1.25rem;
+    }
+    
+    .panel-text-success { color: var(--success); }
+    .panel-text-error { color: var(--error); }
+    
+    .verify-action-btn {
+        width: 100%; 
+        padding: 1.1rem; 
+        font-size: 1.1rem; 
+        font-weight: 700;
+        border-radius: 16px;
+        margin-top: 1.5rem;
+    }
+
+    .btn-disabled-state {
+        background: var(--border-light) !important;
+        color: var(--text-gray) !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+    }
+
+    @media (max-width: 650px) {
+        .task-question-display { font-size: 1.15rem; margin-bottom: 1.5rem; }
+        .interactive-option-button { padding: 1rem; font-size: 0.95rem; border-radius: 14px; }
+        .task-result-status-panel { flex-direction: column; align-items: flex-start; padding: 1.2rem; }
+        .task-result-status-panel .btn { width: 100%; margin-top: 0.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="task-progress-track"><div class="task-progress-fill-line"></div></div>
+
+<div class="card" style="border-radius: 24px; padding: 1.8rem; box-sizing: border-box;">
+    <div class="task-meta-label">
+        {{ track.title }} • Шаг {{ task_number }} из {{ total_tasks }}
+    </div>
+    
+    <div class="task-question-display">{{ task.question | safe }}</div>
+    
+    <div class="task-options-vertical-grid" id="optionsContainer">
+        {% for option in task.options %}
+            <button class="interactive-option-button" data-index="{{ loop.index0 }}" onclick="selectOptionWorkflow(this)">{{ option }}</button>
+        {% endfor %}
+    </div>
+</div>
+
+<button id="checkBtn" class="btn verify-action-btn btn-disabled-state" disabled>Проверить ответ</button>
+
+<div class="task-result-status-panel" id="resultPanel">
+    <div class="panel-inner-text-block">
+        <h3 id="resultTitle"></h3>
+        <p id="resultText" style="margin: 0; font-size: 0.95rem; line-height: 1.5;"></p>
+    </div>
+    <button id="nextBtn" class="btn" style="padding: 0.9rem 2rem; border-radius: 14px; flex-shrink: 0;"></button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentSelectedIndex = null;
+    const checkBtn = document.getElementById('checkBtn');
+    const allOptionElements = document.querySelectorAll('.interactive-option-button');
+    const resultPanel = document.getElementById('resultPanel');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    function selectOptionWorkflow(clickedBtnElement) {
+        // Даем возможность перевыбрать ответ в режиме бесконечного прохождения
+        allOptionElements.forEach(element => {
+            element.classList.remove('selected', 'correct', 'wrong');
+        });
+        clickedBtnElement.classList.add('selected');
+        
+        currentSelectedIndex = parseInt(clickedBtnElement.getAttribute('data-index'));
+        checkBtn.classList.remove('btn-disabled-state');
+        checkBtn.innerText = "Проверить ответ";
+        checkBtn.disabled = false;
+    }
+
+    checkBtn.addEventListener('click', async () => {
+        if (currentSelectedIndex === null) return;
+        
+        const networkResponse = await fetch('/api/check-answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                track_id: parseInt("{{ track.id }}"),
+                task_id: parseInt("{{ task.id }}"),
+                answer_index: currentSelectedIndex
+            })
+        });
+        
+        const responseData = await networkResponse.json();
+        const targetedOptionBtn = document.querySelector(`.interactive-option-button[data-index="${currentSelectedIndex}"]`);
+        
+        // Меняем текст кнопки вместо ее полного скрытия
+        checkBtn.innerText = "Проверить заново 🔄";
+        allOptionElements.forEach(el => el.classList.remove('selected'));
+        
+        if (responseData.correct) {
+            targetedOptionBtn.classList.add('correct');
+            resultTitle.textContent = 'Отлично, это верно! 🎉';
+            resultTitle.className = 'panel-text-success';
+            resultPanel.style.borderColor = 'var(--success)';
+            if (!document.body.classList.contains('dark-mode')) {
+                resultPanel.style.backgroundColor = '#f0fdf4';
+            }
+        } else {
+            targetedOptionBtn.classList.add('wrong');
+            const correctOptionBtn = document.querySelector(`.interactive-option-button[data-index="${responseData.correct_answer}"]`);
+            if (correctOptionBtn) {
+                correctOptionBtn.classList.add('correct');
+            }
+            resultTitle.textContent = 'Не совсем верно 💡';
+            resultTitle.className = 'panel-text-error';
+            resultPanel.style.borderColor = 'var(--error)';
+            if (!document.body.classList.contains('dark-mode')) {
+                resultPanel.style.backgroundColor = '#fef2f2';
+            }
+        }
+        
+        resultText.innerHTML = responseData.explanation;
+        
+        {% if next_task_id %}
+            nextBtn.textContent = 'Дальше';
+            nextBtn.onclick = () => { window.location.href = "{{ url_for('task', track_id=track.id, task_id=next_task_id) }}"; };
+        {% else %}
+            nextBtn.textContent = 'Завершить трек';
+            nextBtn.onclick = () => { window.location.href = "{{ url_for('track_detail', track_id=track.id) }}"; };
+        {% endif %}
+        
+        resultPanel.classList.add('show');
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+</script>
+{% endblock %}

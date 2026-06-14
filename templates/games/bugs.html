@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .bughunt-workspace-card {
+        max-width: 100%;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        padding: 1.8rem;
+        box-shadow: var(--shadow-sm);
+        box-sizing: border-box;
+    }
+
+    .bughunt-navbar-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .bughunt-close-anchor {
+        color: var(--text-gray);
+        font-size: 0.95rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 10px;
+        background: var(--bg-milky);
+        transition: all 0.2s;
+    }
+
+    .bughunt-close-anchor:hover {
+        color: var(--error);
+        background: rgba(239, 68, 68, 0.05);
+    }
+
+    .bughunt-code-container {
+        background: #1E1E24 !important;
+        color: #F8F8F2 !important;
+        padding: 1.5rem;
+        border-radius: 18px;
+        font-family: 'Fira Code', 'Courier New', monospace;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 1.8rem;
+        overflow-x: auto;
+        max-width: 100%;
+        border: 1px solid #2d2d34;
+        box-sizing: border-box;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .bughunt-code-container span {
+        color: #F8F8F2 !important;
+    }
+
+    .bug-line {
+        color: #FF6B6B !important; 
+        font-weight: 700;
+        background: rgba(255, 107, 107, 0.15) !important;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        display: inline-block;
+        border-left: 3px solid #FF6B6B;
+    }
+
+    .hint-box {
+        background: rgba(59, 130, 246, 0.08);
+        border-left: 4px solid var(--sky-blue);
+        padding: 1.2rem;
+        margin-bottom: 1.8rem;
+        border-radius: 0 12px 12px 0;
+        color: var(--text-dark);
+        display: none;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    .bughunt-input-field {
+        width: 100%;
+        display: block;
+        padding: 1rem 1.2rem;
+        font-family: 'Fira Code', 'Courier New', monospace;
+        font-size: 1.05rem;
+        font-weight: 500;
+        background-color: var(--bg-milky);
+        color: var(--text-dark);
+        border: 2px solid var(--border-light);
+        border-radius: 14px;
+        outline: none;
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .bughunt-input-field:focus {
+        border-color: var(--sky-blue);
+        background-color: var(--surface-white);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    .bughunt-buttons-stack {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .bughunt-buttons-stack .btn {
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .result-message-card {
+        display: none;
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 2px solid var(--success);
+        background: rgba(16, 185, 129, 0.04);
+        margin-top: 1.5rem;
+        animation: slideUpFade 0.3s ease-out;
+    }
+
+    @keyframes slideUpFade {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+        .bughunt-workspace-card { padding: 1.2rem 1rem; }
+        .bughunt-code-container { font-size: 0.95rem; padding: 1rem; }
+        .bughunt-buttons-stack { flex-direction: column; gap: 0.8rem; }
+        .bughunt-buttons-stack .btn { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bughunt-workspace-card">
+    <div class="bughunt-navbar-flex">
+        <h3 style="margin: 0; font-weight: 800; font-size: 1.4rem;">Охота на баги 🐛</h3>
+        <a href="{{ url_for('games_hub') }}" class="bughunt-close-anchor">Выйти</a>
+    </div>
+
+    <p style="color: var(--text-gray); font-size: 0.95rem; margin-bottom: 1.2rem;">Уровень: <strong>{{ task.title }}</strong></p>
+
+    <div class="bughunt-code-container">
+        {% set lines = task.code.split('\n') %}
+        {% for line in lines %}
+            {% if line == task.buggy_line %}
+                <span class="bug-line">{{ line }}</span><br>
+            {% else %}
+                <span>{{ line }}</span><br>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="hint-box" id="hintBox">
+        💡 <strong>Подсказка от ментора:</strong> {{ task.hint }}
+    </div>
+
+    <div id="game-controls">
+        <p style="margin-bottom: 0.6rem; font-weight: 700; color: var(--text-gray); font-size: 0.9rem;">Напиши исправленный вариант выделенной красным строки:</p>
+        <input type="text" id="fixInput" class="bughunt-input-field" placeholder="Исправленный код..." autocomplete="off" spellcheck="false">
+        
+        <div class="bughunt-buttons-stack">
+            <button class="btn" style="flex: 2;" id="checkCodeMainBtn" onclick="checkFix()">Проверить код</button>
+            <button class="btn btn-outline" style="flex: 1;" onclick="showHint()">Подсказка</button>
+        </div>
+    </div>
+
+    <div id="result-message" class="result-message-card">
+        <h3 id="result-title" style="margin-bottom: 1.2rem; font-weight: 800; color: var(--text-dark);"></h3>
+        <button class="btn" style="padding: 0.8rem 2rem;" onclick="location.reload()">Следующий баг →</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showHint() {
+        document.getElementById('hintBox').style.display = 'block';
+    }
+
+    async function checkFix() {
+        const answer = document.getElementById('fixInput').value;
+        const mainActionBtn = document.getElementById('checkCodeMainBtn');
+        if (!answer.trim()) return;
+
+        const response = await fetch('/api/check-bug', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                task_id: {{ task.id }},
+                answer: answer
+            })
+        });
+        
+        const data = await response.json();
+        
+        const controls = document.getElementById('game-controls');
+        const resultMsg = document.getElementById('result-message');
+        const resultTitle = document.getElementById('result-title');
+        
+        if (data.correct) {
+            controls.style.display = 'none';
+            resultMsg.style.display = 'block';
+            resultTitle.innerHTML = `🔥 Красавчик! Баг устранен.<br><span style="color: var(--success); font-size: 1.4rem; font-weight: 900;">+${data.xp_earned} XP</span>`;
+            
+            const targetBuggyLine = document.querySelector('.bug-line');
+            if (targetBuggyLine) {
+                targetBuggyLine.style.setProperty('color', '#2ECC71', 'important');
+                targetBuggyLine.style.setProperty('background', 'rgba(46, 204, 113, 0.15)', 'important');
+            }
+        } else {
+            const input = document.getElementById('fixInput');
+            input.style.borderColor = 'var(--error)';
+            mainActionBtn.innerText = "Попробовать еще раз 🔄";
+            
+            input.style.transform = 'translateX(-8px)';
+            setTimeout(() => input.style.transform = 'translateX(8px)', 80);
+            setTimeout(() => input.style.transform = 'translateX(-8px)', 160);
+            setTimeout(() => input.style.transform = 'translateX(0)', 240);
+        }
+    }
+
+    document.getElementById('fixInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkFix();
+        }
+    });
+</script>
+{% endblock %}

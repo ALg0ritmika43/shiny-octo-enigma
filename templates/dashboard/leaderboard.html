@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 3rem 1.5rem; background: var(--grad-hero); border-color: var(--sky-blue); text-shadow: none;">
+    <h2 style="font-size: 2.2rem; margin-bottom: 0.5rem; font-weight: 900;">Арена лидеров PyLearn 🏆</h2>
+    <p style="color: var(--text-gray); font-size: 1rem; font-weight: 500;">Рейтинг студентов платформы, отсортированный по набранному опыту XP.</p>
+</div>
+
+<style>
+    .leaderboard-desktop-table-view {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    
+    .leaderboard-desktop-table-view th, .leaderboard-desktop-table-view td {
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+    }
+    
+    .leaderboard-desktop-table-view th {
+        font-weight: 800;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        color: var(--text-gray);
+        letter-spacing: 0.5px;
+    }
+
+    .leaderboard-desktop-table-view tbody tr {
+        transition: background 0.2s ease;
+    }
+
+    .leaderboard-desktop-table-view tbody tr:hover {
+        background: rgba(59, 130, 246, 0.02);
+    }
+
+    .mobile-cards-leaderboard-view {
+        display: none;
+        flex-direction: column;
+        gap: 0.8rem;
+        margin-bottom: 2rem;
+    }
+    
+    .mobile-student-rank-card {
+        background: var(--surface-white);
+        padding: 1.2rem 1rem;
+        border-radius: 18px;
+        border: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .rank-gold-highlight { color: #F59E0B; font-weight: 900; }
+    .rank-silver-highlight { color: #94A3B8; font-weight: 900; }
+    .rank-bronze-highlight { color: #B45309; font-weight: 900; }
+
+    @media (max-width: 768px) {
+        .desktop-table-card-container { display: none; }
+        .mobile-cards-leaderboard-view { display: flex; }
+    }
+</style>
+
+<div class="card desktop-table-card-container" style="padding: 0; overflow: hidden;">
+    <table class="leaderboard-desktop-table-view">
+        <thead style="background: var(--bg-milky);">
+            <tr>
+                <th>Позиция</th>
+                <th>Студент</th>
+                <th>Активность 🔥</th>
+                <th style="text-align: right;">Суммарный опыт</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for leader in leaders %}
+            <tr {% if leader.username == user.username %}style="background: rgba(59, 130, 246, 0.07); font-weight: 700;"{% endif %}>
+                <td style="font-size: 1.1rem;">
+                    {% if loop.index == 1 %}
+                        <span class="rank-gold-highlight">🥇 1</span>
+                    {% elif loop.index == 2 %}
+                        <span class="rank-silver-highlight">🥈 2</span>
+                    {% elif loop.index == 3 %}
+                        <span class="rank-bronze-highlight">🥉 3</span>
+                    {% else %}
+                        <span style="font-weight: 700; color: var(--text-gray);">#{{ loop.index }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {{ leader.username }} 
+                    {% if leader.username == user.username %}<span style="color: var(--sky-blue); font-size: 0.8rem; margin-left: 0.3rem;">(Вы)</span>{% endif %}
+                </td>
+                <td>
+                    {% if leader.streak > 0 %}
+                        <span style="color: #F59E0B; font-weight: bold;">🔥 {{ leader.streak }} дней</span>
+                    {% else %}
+                        <span style="color: var(--text-gray); font-size: 0.9rem;">-</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: right; font-weight: 800; color: var(--sky-blue); font-size: 1.1rem;">{{ leader.xp }} XP</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mobile-cards-leaderboard-view">
+    {% for leader in leaders %}
+    <div class="mobile-student-rank-card" {% if leader.username == user.username %}style="border-color: var(--sky-blue); background: rgba(59, 130, 246, 0.04); border-width: 2px;"{% endif %}>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="font-size: 1.2rem; min-width: 40px;">
+                {% if loop.index == 1 %}🥇
+                {% elif loop.index == 2 %}🥈
+                {% elif loop.index == 3 %}🥉
+                {% else %}#{{ loop.index }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 1rem; color: var(--text-dark);">
+                    {{ leader.username }} {% if leader.username == user.username %}(Вы){% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-gray); margin-top: 0.1rem;">
+                    Серия активности: {{ leader.streak }} дн.
+                </div>
+            </div>
+        </div>
+        <div style="font-weight: 900; color: var(--sky-blue); font-size: 1.05rem;">
+            {{ leader.xp }} XP
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

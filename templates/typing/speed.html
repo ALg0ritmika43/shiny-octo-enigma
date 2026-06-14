@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .speed-hub-card {
+        max-width: 100%;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        padding: 1.8rem;
+        box-shadow: var(--shadow-sm);
+        box-sizing: border-box;
+    }
+
+    .speed-task-interactive-box { 
+        border: 2px solid var(--border-light); 
+        border-radius: 16px; 
+        padding: 1.2rem; 
+        margin-bottom: 1rem; 
+        cursor: pointer; 
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        background: var(--bg-milky);
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+    
+    .speed-task-interactive-box:hover { 
+        border-color: var(--sky-blue); 
+        background: var(--surface-white);
+        transform: scale(1.01);
+    }
+
+    .speed-hidden-node { display: none !important; }
+    
+    .speed-game-timer { 
+        font-size: 3rem; 
+        font-weight: 900; 
+        color: var(--error); 
+        text-align: center; 
+        margin-bottom: 1.5rem; 
+        font-family: 'Fira Code', monospace; 
+        letter-spacing: -1px;
+        text-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .speed-input-field-ide {
+        width: 100%;
+        display: block;
+        font-family: 'Fira Code', 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: 500;
+        padding: 1.1rem 1.4rem;
+        background-color: var(--bg-milky);
+        color: var(--text-dark);
+        border: 2px solid var(--border-light);
+        border-radius: 16px;
+        outline: none;
+        margin-bottom: 1.5rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+
+    .speed-input-field-ide:focus {
+        border-color: var(--sky-blue);
+        background-color: var(--surface-white);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    @media (max-width: 600px) {
+        .speed-hub-card { padding: 1.2rem 1rem; }
+        .speed-game-timer { font-size: 2.3rem; margin-bottom: 1rem; }
+        .speed-input-field-ide { font-size: 1rem; padding: 0.9rem 1.1rem; border-radius: 12px; }
+        .speed-task-interactive-box { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="speed-hub-card" id="task-selection">
+    <h2 style="margin: 0 0 0.5rem 0; font-weight: 900; letter-spacing: -0.5px;">Спид-Кодинг ⚡</h2>
+    <p style="color: var(--text-gray); margin-bottom: 2rem;">Выберите тренировочный скрипт. Проходить задачи и ставить новые рекорды скорости можно без ограничений!</p>
+    
+    {% for task in tasks %}
+    <div class="speed-task-interactive-box" onclick="startSpeedCodingSession({{ task.id }}, '{{ task.description | escape }}', '{{ task.hint | escape }}')">
+        <h4 style="margin: 0 0 0.3rem 0; font-weight: 800; font-size: 1.1rem; color: var(--sky-blue);">Задача #{{ task.id }}</h4>
+        <p style="color: var(--text-gray); margin: 0; font-size: 0.9rem; line-height: 1.4;">{{ task.description }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="speed-hub-card speed-hidden-node" id="coding-area">
+    <button class="btn btn-outline" style="margin-bottom: 1.5rem; padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="abortAndGoBack()">← Вернуться к списку</button>
+    <div class="speed-game-timer" id="timerDisplay">0.0s</div>
+    
+    <h3 id="activeDescription" style="margin: 0 0 0.5rem 0; font-weight: 800; text-align: center; font-size: 1.3rem;"></h3>
+    <p id="activeHint" style="text-align: center; color: var(--text-gray); font-family: 'Fira Code', monospace; margin: 0 0 2rem 0; font-size: 0.95rem; background: var(--bg-milky); padding: 0.5rem; border-radius: 8px; display: inline-block; width: 100%; box-sizing: border-box; border: 1px dashed var(--border-light);"></p>
+    
+    <input type="text" id="codeInput" class="speed-input-field-ide" placeholder="Пишите исправную строку кода..." autocomplete="off" spellcheck="false">
+    
+    <button class="btn" style="width: 100%; padding: 1.1rem; font-size: 1.1rem; font-weight: 700; border-radius: 16px;" onclick="checkSpeedTask()">Сдать решение на проверку</button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let activeTaskId = null;
+    let startTime = null;
+    let timerInterval = null;
+
+    function startSpeedCodingSession(id, desc, hint) {
+        activeTaskId = id;
+        document.getElementById('task-selection').classList.add('speed-hidden-node');
+        document.getElementById('coding-area').classList.remove('speed-hidden-node');
+        
+        document.getElementById('activeDescription').innerText = desc;
+        document.getElementById('activeHint').innerText = hint;
+        
+        const codeInput = document.getElementById('codeInput');
+        codeInput.value = '';
+        codeInput.focus();
+        
+        startTime = Date.now();
+        timerInterval = setInterval(() => {
+            let elapsed = (Date.now() - startTime) / 1000;
+            document.getElementById('timerDisplay').innerText = elapsed.toFixed(1) + 's';
+        }, 100);
+    }
+
+    function abortAndGoBack() {
+        clearInterval(timerInterval);
+        document.getElementById('task-selection').classList.remove('speed-hidden-node');
+        document.getElementById('coding-area').classList.add('speed-hidden-node');
+    }
+
+    async function checkSpeedTask() {
+        if(!activeTaskId) return;
+        clearInterval(timerInterval);
+        
+        let timeSeconds = (Date.now() - startTime) / 1000;
+        let answer = document.getElementById('codeInput').value;
+        
+        const response = await fetch('/api/check-speed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                task_id: activeTaskId,
+                answer: answer,
+                time_seconds: timeSeconds
+            })
+        });
+        const data = await response.json();
+        
+        if(data.correct) {
+            alert(`Бинго! Идеальное выполнение за ${timeSeconds.toFixed(2)} сек. Рекорд обновлен!`);
+            abortAndGoBack();
+        } else {
+            alert(`Упс, синтаксическая ошибка.\nОжидалось: ${data.expected}\nПопробуйте исправить конструкцию!`);
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                let elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timerDisplay').innerText = elapsed.toFixed(1) + 's';
+            }, 100);
+            document.getElementById('codeInput').focus();
+        }
+    }
+
+    document.getElementById('codeInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            checkSpeedTask();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/monokai.min.css">
+<style>
+    .internship-workspace-layout {
+        display: flex;
+        gap: 1.5rem;
+        height: 72vh;
+        min-height: 600px;
+    }
+    
+    .chat-messenger-panel, .ide-code-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .chat-messenger-panel {
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .chat-panel-header {
+        padding: 1.2rem;
+        background: var(--bg-milky);
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .teamlead-avatar-circle {
+        font-size: 1.8rem;
+        background: var(--surface-white);
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        border: 1px solid var(--border-light);
+    }
+
+    .chat-scroll-viewport {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: var(--bg-milky);
+    }
+    
+    .chat-message-bubble {
+        max-width: 80%;
+        padding: 0.9rem 1.2rem;
+        border-radius: 20px;
+        line-height: 1.5;
+        font-size: 0.95rem;
+        animation: bubbleBounceIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    .bubble-from-lead {
+        background: var(--surface-white);
+        color: var(--text-dark);
+        border-top-left-radius: 4px;
+        border: 1px solid var(--border-light);
+        align-self: flex-start;
+    }
+    
+    .bubble-from-user {
+        background: var(--sky-blue);
+        color: white;
+        border-top-right-radius: 4px;
+        align-self: flex-end;
+    }
+    
+    @keyframes bubbleBounceIn {
+        0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    
+    .lead-typing-indicator {
+        color: var(--text-gray);
+        font-style: italic;
+        font-size: 0.85rem;
+        padding: 0.2rem 1.5rem 0.8rem 1.5rem;
+        background: var(--bg-milky);
+        display: none;
+        font-weight: 600;
+    }
+
+    .CodeMirror {
+        flex: 1;
+        min-height: 280px;
+        border-radius: 20px;
+        font-size: 1rem;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .ide-console-output {
+        height: 140px;
+        background: var(--code-bg);
+        border: 1px solid var(--border-light);
+        border-radius: 18px;
+        padding: 1rem;
+        overflow-y: auto;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.9rem;
+        margin-top: 0.8rem;
+        white-space: pre-wrap;
+    }
+
+    .ide-btn-loader {
+        width: 100%;
+        margin-top: 0.8rem;
+        position: relative;
+    }
+
+    .btn-disabled-state {
+        background: var(--border-light) !important;
+        color: var(--text-gray) !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+        transform: none !important;
+    }
+
+    /* Стили для нашей новой навигационной панели */
+    .internship-navigation-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 20px;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .nav-meta-info {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+
+    @media (max-width: 991px) {
+        .internship-workspace-layout { flex-direction: column; height: auto; }
+        .chat-messenger-panel { height: 380px; }
+        .ide-code-panel { height: 520px; }
+        .internship-navigation-bar { flex-direction: column; gap: 0.8rem; text-align: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="internship-navigation-bar">
+    <a href="{{ url_for('internship_hub') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2" style="border-radius: 12px; font-weight: 700;">
+        ↩ В хаб стажировки
+    </a>
+    
+    <div class="nav-meta-info">
+        Сложность: <span class="text-primary text-uppercase">{{ difficulty }}</span> | 
+        Задача: <span class="text-success">#{{ task_id }}</span>
+    </div>
+
+    {% if next_task_id %}
+        <a href="{{ url_for('internship_task', difficulty=difficulty, task_id=next_task_id) }}" class="btn btn-primary d-flex align-items-center gap-2" style="border-radius: 12px; font-weight: 700; background: var(--sky-blue); border: none;">
+            Следующая задача ⏭
+        </a>
+    {% else %}
+        <button class="btn btn-secondary" disabled style="border-radius: 12px; font-weight: 700;" title="Вы прошли все задачи этой сложности!">
+            🎉 Последняя в грейде
+        </button>
+    {% endif %}
+</div>
+
+<div class="card" style="padding: 1.2rem; margin-bottom: 1.2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem;">
+    <div>
+        <h3 style="margin-bottom: 0.2rem; font-weight: 800;">Модуль стажировки: Симуляция 💼</h3>
+        <p style="color: var(--text-gray); font-size: 0.9rem;">Изучайте требования, пишите программное решение и сдавайте код ментору.</p>
+    </div>
+    <span style="background: rgba(16,185,129,0.12); color: var(--accent-green); padding: 0.5rem 1rem; border-radius: 12px; font-weight: 800; font-size: 0.9rem;">Награда: +{{ task.xp }} XP</span>
+</div>
+
+<div class="internship-workspace-layout">
+    <div class="chat-messenger-panel">
+        <div class="chat-panel-header">
+            <div class="teamlead-avatar-circle">{{ task.avatar }}</div>
+            <div>
+                <h5 style="margin: 0; font-size: 1rem; font-weight: 700;">{{ task.lead_name }}</h5>
+                <div style="font-size: 0.8rem; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 0.3rem;">
+                    <span style="animation: pulse 2s infinite;">●</span> Corporate Chat
+                </div>
+            </div>
+        </div>
+        <div class="chat-scroll-viewport" id="chatScrollViewport"></div>
+        <div class="lead-typing-indicator" id="leadTypingIndicator">Тимлид пишет ответ...</div>
+    </div>
+
+    <div class="ide-code-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-gray);">Окно редактора (Python 3):</span>
+            {% if history %}
+            <select id="historySelector" onchange="restoreHistoryCode()" style="padding: 0.4rem; border-radius: 10px; border: 1px solid var(--border-light); background: var(--surface-white); color: var(--text-dark); font-size: 0.85rem; font-weight: 600;">
+                <option value="">-- История решений --</option>
+                {% for log in history %}
+                <option value="{{ loop.index0 }}">Попытка #{{ loop.index }} - {% if log.is_correct %}✅ Успешно{% else %}❌ Ошибка{% endif %}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+        </div>
+        
+        <textarea id="pythonCodeCodeMirror">{{ last_code | safe }}</textarea>
+        
+        <button id="executeAndSubmitBtn" class="btn ide-btn-loader btn-disabled-state" disabled>
+            <span id="btnTextLabel">Загрузка виртуального окружения...</span>
+        </button>
+        
+        <div class="ide-console-output" id="consoleOutputArea" style="color: var(--text-dark); background-color: var(--surface-white);">[Система]: Дождитесь инициализации микросреды компилятора...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+<script>
+    const taskMessagesList = {{ task.messages | tojson }};
+    const chatScrollViewport = document.getElementById('chatScrollViewport');
+    const leadTypingIndicator = document.getElementById('leadTypingIndicator');
+    const historySelector = document.getElementById('historySelector');
+    const historyDataLogs = {{ history | tojson | default('[]') | safe }};
+    
+    async function printLeadMessages() {
+        for (let idx = 0; idx < taskMessagesList.length; idx++) {
+            leadTypingIndicator.style.display = 'block';
+            chatScrollViewport.scrollTop = chatScrollViewport.scrollHeight;
+            await new Promise(res => setTimeout(res, 1000 + Math.random() * 800));
+            leadTypingIndicator.style.display = 'none';
+            
+            const bubbleElement = document.createElement('div');
+            bubbleElement.className = 'chat-message-bubble bubble-from-lead';
+            bubbleElement.innerHTML = taskMessagesList[idx];
+            chatScrollViewport.appendChild(bubbleElement);
+            chatScrollViewport.scrollTop = chatScrollViewport.scrollHeight;
+        }
+    }
+    setTimeout(printLeadMessages, 400);
+
+    const codeMirrorInstance = CodeMirror.fromTextArea(document.getElementById('pythonCodeCodeMirror'), {
+        mode: 'python',
+        theme: document.body.classList.contains('dark-mode') ? 'monokai' : 'default',
+        lineNumbers: true,
+        indentUnit: 4,
+        matchBrackets: true,
+        autoCloseBrackets: true
+    });
+
+    let pyodideWasmRuntime;
+    const consoleOutputArea = document.getElementById('consoleOutputArea');
+    const executeAndSubmitBtn = document.getElementById('executeAndSubmitBtn');
+    const btnTextLabel = document.getElementById('btnTextLabel');
+
+    async function startPyodideRuntime() {
+        try {
+            pyodideWasmRuntime = await loadPyodide({
+                stdout: (outputMsg) => { consoleOutputArea.innerText += outputMsg + '\n'; },
+                stderr: (errorMsg) => { consoleOutputArea.innerText += errorMsg + '\n'; }
+            });
+            consoleOutputArea.innerText = "[Система]: Компилятор Python готов к работе. Напишите код и нажмите запуск.\n";
+            btnTextLabel.innerText = '▶ Запустить код и отправить отчет';
+            executeAndSubmitBtn.classList.remove('btn-disabled-state');
+            executeAndSubmitBtn.disabled = false;
+        } catch (initializationError) {
+            consoleOutputArea.innerHTML = `<span style="color: var(--error);">Критический сбой компилятора Wasm: ${initializationError}</span>`;
+        }
+    }
+    startPyodideRuntime();
+
+    executeAndSubmitBtn.addEventListener('click', async () => {
+        consoleOutputArea.innerText = '';
+        const rawUserCode = codeMirrorInstance.getValue();
+        let evaluationResultStatus = false;
+        
+        try {
+            await pyodideWasmRuntime.runPythonAsync(rawUserCode);
+            const filteredConsoleOutput = consoleOutputArea.innerText.trim();
+            const pristineExpectedOutput = `{{ task.expected_output }}`.trim();
+            evaluationResultStatus = (filteredConsoleOutput === pristineExpectedOutput);
+            
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-message-bubble bubble-from-user';
+            userBubble.innerText = "Я реализовал логику по ТЗ. Отправляю скрипт на ревью.";
+            chatScrollViewport.appendChild(userBubble);
+            chatScrollViewport.scrollTop = chatScrollViewport.scrollHeight;
+
+            leadTypingIndicator.style.display = 'block';
+            setTimeout(() => {
+                leadTypingIndicator.style.display = 'none';
+                const resolutionBubble = document.createElement('div');
+                resolutionBubble.className = 'chat-message-bubble bubble-from-lead';
+                if (evaluationResultStatus) {
+                    resolutionBubble.innerHTML = "🎯 Замечательно! Твой скрипт полностью прошел интеграционные тесты. Задача закрыта. Начислено <b>+{{ task.xp }} XP</b>. Тебя автоматически переведут на следующее задание через пару секунд...";
+                    
+                    // АВТОМАТИЧЕСКИЙ ПЕРЕХОД ПРИ УСПЕХЕ
+                    setTimeout(() => {
+                        {% if next_task_id %}
+                            window.location.href = "{{ url_for('internship_task', difficulty=difficulty, task_id=next_task_id) }}";
+                        {% else %}
+                            window.location.href = "{{ url_for('internship_hub') }}";
+                        {% endif %}
+                    }, 2500);
+
+                } else {
+                    resolutionBubble.innerHTML = "❌ Код отработал без фатальных синтаксических ошибок, но возвращаемый результат в консоли не соответствует регламенту ТЗ. Сверь `print()` выводы.";
+                }
+                chatScrollViewport.appendChild(resolutionBubble);
+                chatScrollViewport.scrollTop = chatScrollViewport.scrollHeight;
+            }, 1500);
+
+        } catch (runtimeExecutionError) {
+            consoleOutputArea.innerHTML = `<span style="color: var(--error);">${runtimeExecutionError}</span>`;
+        }
+
+        await fetch('/api/internship-attempt', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                xp: parseInt("{{ task.xp }}"),
+                task_id: parseInt("{{ task.id }}"),
+                difficulty: '{{ difficulty }}',
+                code: rawUserCode,
+                is_correct: evaluationResultStatus
+            })
+        });
+    });
+
+    function restoreHistoryCode() {
+        const selectedIndex = historySelector.value;
+        if (selectedIndex !== "" && historyDataLogs[selectedIndex]) {
+            codeMirrorInstance.setValue(historyDataLogs[selectedIndex].code);
+        }
+    }
+</script>
+{% endblock %}

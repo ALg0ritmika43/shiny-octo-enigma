@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .intern-top-banner {
+        text-align: center;
+        padding: 3.5rem 1.5rem;
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+        background-image: 
+            radial-gradient(circle at top right, rgba(139, 92, 246, 0.3), transparent 60%), 
+            radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.2), transparent 60%);
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #FFFFFF;
+        margin-bottom: 2.5rem;
+        box-shadow: var(--shadow-md);
+    }
+
+    .intern-top-banner h2 {
+        font-size: 2.4rem;
+        font-weight: 900;
+        margin-bottom: 0.6rem;
+        letter-spacing: -0.5px;
+    }
+
+    .intern-top-banner p {
+        color: #94A3B8;
+        max-width: 550px;
+        margin: 0 auto;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .intern-grid-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .difficulty-column-card {
+        margin: 0;
+        padding: 1.5rem 1.2rem;
+        background: var(--surface-white);
+        border-radius: 24px;
+        border: 1px solid var(--border-light);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .column-main-title {
+        text-align: center;
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-bottom: 1.8rem;
+        padding-bottom: 0.5rem;
+    }
+
+    .tasks-vertical-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .intern-task-anchor {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.9rem 1rem;
+        background: var(--bg-milky);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--text-dark);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+        max-width: 100%;
+    }
+
+    .intern-task-anchor:hover {
+        transform: translateY(-2px);
+        background: var(--surface-white);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .task-meta-left-side {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        min-width: 0;
+    }
+
+    .task-round-index {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        color: #FFFFFF;
+        font-weight: 800;
+        font-size: 0.85rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .text-info-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        min-width: 0;
+    }
+
+    .task-inner-heading {
+        font-weight: 700;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: var(--text-dark);
+    }
+
+    .task-inner-xp {
+        font-size: 0.75rem;
+        color: var(--text-gray);
+        font-weight: 600;
+    }
+
+    .task-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: 0.4rem;
+    }
+
+    @media (max-width: 600px) {
+        .intern-top-banner { padding: 2.5rem 1rem; }
+        .intern-top-banner h2 { font-size: 1.9rem; }
+        .intern-grid-container { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="intern-top-banner">
+    <div style="font-size: 2.6rem; margin-bottom: 0.5rem;">💼</div>
+    <h2>Инженерная Стажировка</h2>
+    <p>Выбирай уровень сложности и бери в работу реальные бизнес-задачи от продуктовой команды платформы.</p>
+</div>
+
+<div class="intern-grid-container">
+    
+    <div class="difficulty-column-card" style="border-top: 4px solid var(--accent-green);">
+        <h3 class="column-main-title" style="color: var(--accent-green);">🟢 Junior (Легко)</h3>
+        <div class="tasks-vertical-stack">
+            {% for task in tasks['easy'] %}
+                {% set t_key = 'easy_' ~ task.id %}
+                <a href="{{ url_for('internship_task', difficulty='easy', task_id=task.id) }}" class="intern-task-anchor">
+                    <div class="task-meta-left-side">
+                        <span class="task-round-index" style="background: var(--accent-green);">{{ loop.index }}</span>
+                        <div class="text-info-block">
+                            <span class="task-inner-heading">{{ task.title }}</span>
+                            <span class="task-inner-xp">Награда: {{ task.xp }} XP</span>
+                        </div>
+                    </div>
+                    <div class="task-checkbox-wrapper">
+                        {% if t_key in completed_tasks %}
+                            <span style="font-size: 1.1rem;">✅</span>
+                        {% else %}
+                            <span style="font-size: 1.1rem; opacity: 0.2;">⬜</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="difficulty-column-card" style="border-top: 4px solid var(--warning);">
+        <h3 class="column-main-title" style="color: var(--warning);">🟡 Middle (Средне)</h3>
+        <div class="tasks-vertical-stack">
+            {% for task in tasks['medium'] %}
+                {% set t_key = 'medium_' ~ task.id %}
+                <a href="{{ url_for('internship_task', difficulty='medium', task_id=task.id) }}" class="intern-task-anchor">
+                    <div class="task-meta-left-side">
+                        <span class="task-round-index" style="background: var(--warning);">{{ loop.index }}</span>
+                        <div class="text-info-block">
+                            <span class="task-inner-heading">{{ task.title }}</span>
+                            <span class="task-inner-xp">Награда: {{ task.xp }} XP</span>
+                        </div>
+                    </div>
+                    <div class="task-checkbox-wrapper">
+                        {% if t_key in completed_tasks %}
+                            <span style="font-size: 1.1rem;">✅</span>
+                        {% else %}
+                            <span style="font-size: 1.1rem; opacity: 0.2;">⬜</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="difficulty-column-card" style="border-top: 4px solid var(--error);">
+        <h3 class="column-main-title" style="color: var(--error);">🔴 Senior (Сложно)</h3>
+        <div class="tasks-vertical-stack">
+            {% for task in tasks['hard'] %}
+                {% set t_key = 'hard_' ~ task.id %}
+                <a href="{{ url_for('internship_task', difficulty='hard', task_id=task.id) }}" class="intern-task-anchor">
+                    <div class="task-meta-left-side">
+                        <span class="task-round-index" style="background: var(--error);">{{ loop.index }}</span>
+                        <div class="text-info-block">
+                            <span class="task-inner-heading">{{ task.title }}</span>
+                            <span class="task-inner-xp">Награда: {{ task.xp }} XP</span>
+                        </div>
+                    </div>
+                    <div class="task-checkbox-wrapper">
+                        {% if t_key in completed_tasks %}
+                            <span style="font-size: 1.1rem;">✅</span>
+                        {% else %}
+                            <span style="font-size: 1.1rem; opacity: 0.2;">⬜</span>
+                        {% endif %}
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

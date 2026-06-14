@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .auth-card-layout {
+        max-width: 400px;
+        margin: 3.5rem auto;
+        padding: 2.2rem 1.8rem;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        box-shadow: var(--shadow-md);
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    .auth-card-layout h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin-bottom: 2rem;
+        letter-spacing: -0.5px;
+    }
+
+    .auth-html-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        width: 100%;
+    }
+
+    .auth-field-wrapper {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+
+    .auth-field-wrapper label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-gray);
+        margin-bottom: 0.4rem;
+    }
+
+    .auth-custom-input {
+        width: 100%;
+        display: block;
+        padding: 0.95rem 1.2rem;
+        font-size: 1rem;
+        font-weight: 500;
+        background-color: var(--bg-milky);
+        color: var(--text-dark);
+        border: 2px solid var(--border-light);
+        border-radius: 14px;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .auth-custom-input:focus {
+        border-color: var(--sky-blue);
+        background-color: var(--surface-white);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    .auth-action-btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 14px;
+        margin-top: 0.4rem;
+        box-sizing: border-box;
+    }
+
+    .auth-bottom-nav-text {
+        margin-top: 1.8rem;
+        font-size: 0.95rem;
+        color: var(--text-gray);
+    }
+
+    .auth-bottom-nav-text a {
+        color: var(--sky-blue);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .success-badge-alert {
+        background: rgba(16, 185, 129, 0.08);
+        border: 1px solid var(--success);
+        padding: 0.8rem;
+        border-radius: 12px;
+        color: var(--success);
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: none;
+        text-align: center;
+    }
+
+    .error-badge-alert {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid var(--error);
+        padding: 0.8rem;
+        border-radius: 12px;
+        color: var(--error);
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card-layout">
+    <h2>С возвращением!</h2>
+
+    <div class="success-badge-alert" id="successBadgeAlert">
+        Учетная запись создана! Введите пароль для входа.
+    </div>
+
+    {% if error %}
+    <div class="error-badge-alert">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form class="auth-html-form" method="POST" action="{{ url_for('login') }}">
+        <div class="auth-field-wrapper">
+            <label for="username">Имя пользователя или Email</label>
+            <input type="text" id="username" name="username" class="auth-custom-input" placeholder="Ваш логин" value="{{ request.form.get('username', '') }}" required autocomplete="username">
+        </div>
+        <div class="auth-field-wrapper">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" name="password" class="auth-custom-input" placeholder="Введите пароль" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn auth-action-btn">Войти в личный кабинет</button>
+    </form>
+    
+    <div class="auth-bottom-nav-text">
+        Нет аккаунта? <a href="{{ url_for('register') }}">Создать новый</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const registeredUser = urlParams.get('registered_user');
+
+        if (registeredUser) {
+            document.getElementById('username').value = registeredUser;
+            document.getElementById('successBadgeAlert').style.display = 'block';
+            document.getElementById('password').focus();
+        }
+    });
+</script>
+{% endblock %}

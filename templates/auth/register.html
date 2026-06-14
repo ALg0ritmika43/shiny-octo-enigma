@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .auth-card-layout {
+        max-width: 400px;
+        margin: 3.5rem auto;
+        padding: 2.2rem 1.8rem;
+        background: var(--surface-white);
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        box-shadow: var(--shadow-md);
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    .auth-card-layout h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+    }
+
+    .auth-card-layout .subtitle {
+        color: var(--text-gray);
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+        display: block;
+    }
+
+    .auth-html-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+        width: 100%;
+    }
+
+    .auth-field-wrapper {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+
+    .auth-field-wrapper label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-gray);
+        margin-bottom: 0.4rem;
+    }
+
+    .auth-custom-input {
+        width: 100%;
+        display: block;
+        padding: 0.95rem 1.2rem;
+        font-size: 1rem;
+        font-weight: 500;
+        background-color: var(--bg-milky);
+        color: var(--text-dark);
+        border: 2px solid var(--border-light);
+        border-radius: 14px;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+    }
+
+    .auth-custom-input:focus {
+        border-color: var(--sky-blue);
+        background-color: var(--surface-white);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    .auth-custom-input.invalid-field {
+        border-color: var(--error) !important;
+        background-color: var(--surface-white);
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1) !important;
+    }
+
+    .field-error-msg {
+        color: var(--error);
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 0.3rem;
+        display: none;
+        line-height: 1.3;
+    }
+
+    .auth-action-btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 14px;
+        margin-top: 0.5rem;
+        box-sizing: border-box;
+    }
+
+    .auth-bottom-nav-text {
+        margin-top: 1.8rem;
+        font-size: 0.95rem;
+        color: var(--text-gray);
+    }
+
+    .auth-bottom-nav-text a {
+        color: var(--sky-blue);
+        text-decoration: none;
+        font-weight: 700;
+    }
+
+    .form-summary-error {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid var(--error);
+        padding: 0.8rem;
+        border-radius: 12px;
+        color: var(--error);
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: none;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card-layout">
+    <h2>Создать аккаунт</h2>
+    <span class="subtitle">Присоединяйтесь к обучению на платформе PyLearn</span>
+
+    <div class="form-summary-error" id="formSummaryError"></div>
+
+    <form class="auth-html-form" id="registerForm" onsubmit="handleRegisterSubmit(event)">
+        <div class="auth-field-wrapper">
+            <label for="username">Имя пользователя</label>
+            <input type="text" id="username" name="username" class="auth-custom-input" placeholder="От 3 до 15 символов" required autocomplete="username">
+            <div class="field-error-msg" id="usernameError">Логин должен быть от 3 до 15 символов и содержать только латинские буквы, цифры или "_"</div>
+        </div>
+
+        <div class="auth-field-wrapper">
+            <label for="email">Электронная почта</label>
+            <input type="email" id="email" name="email" class="auth-custom-input" placeholder="example@mail.com" required autocomplete="email">
+            <div class="field-error-msg" id="emailError">Введите корректный адрес электронной почты</div>
+        </div>
+
+        <div class="auth-field-wrapper">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" name="password" class="auth-custom-input" placeholder="Минимум 8 знаков" required autocomplete="new-password">
+            <div class="field-error-msg" id="passwordError">Пароль должен содержать минимум 8 символов, включая заглавную букву, строчную и одну цифру</div>
+        </div>
+
+        <div class="auth-field-wrapper">
+            <label for="confirm">Повторите пароль</label>
+            <input type="password" id="confirm" name="confirm" class="auth-custom-input" placeholder="Пароли должны совпадать" required autocomplete="new-password">
+            <div class="field-error-msg" id="passwordConfirmError">Введенные пароли не совпадают</div>
+        </div>
+
+        <button type="submit" class="btn auth-action-btn">Зарегистрироваться</button>
+    </form>
+    
+    <div class="auth-bottom-nav-text">
+        Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function handleRegisterSubmit(event) {
+        event.preventDefault();
+
+        const inputs = document.querySelectorAll('.auth-custom-input');
+        const errors = document.querySelectorAll('.field-error-msg');
+        const summaryError = document.getElementById('formSummaryError');
+        
+        inputs.forEach(input => input.classList.remove('invalid-field'));
+        errors.forEach(err => err.style.display = 'none');
+        summaryError.style.display = 'none';
+
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm').value;
+
+        let formIsValid = true;
+
+        const usernameRegex = /^[a-zA-Z0-9_]{3,15}$/;
+        if (!usernameRegex.test(username)) {
+            invalidateField('username', 'usernameError');
+            formIsValid = false;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            invalidateField('email', 'emailError');
+            formIsValid = false;
+        }
+
+        const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            invalidateField('password', 'passwordError');
+            formIsValid = false;
+        }
+
+        if (password !== confirm) {
+            invalidateField('confirm', 'passwordConfirmError');
+            formIsValid = false;
+        }
+
+        if (!formIsValid) return;
+
+        const bodyFormData = new FormData();
+        bodyFormData.append('username', username);
+        bodyFormData.append('email', email);
+        bodyFormData.append('password', password);
+        bodyFormData.append('confirm', confirm);
+
+        try {
+            const response = await fetch("{{ url_for('register') }}", {
+                method: 'POST',
+                body: bodyFormData
+            });
+
+            if (response.redirected) {
+                window.location.href = "{{ url_for('login') }}?registered_user=" + encodeURIComponent(username);
+            } else {
+                summaryError.innerText = "Пользователь с таким именем или email уже существует.";
+                summaryError.style.display = 'block';
+            }
+        } catch (err) {
+            summaryError.innerText = "Ошибка соединения с сервером.";
+            summaryError.style.display = 'block';
+        }
+    }
+
+    function invalidateField(inputId, errorId) {
+        document.getElementById(inputId).classList.add('invalid-field');
+        document.getElementById(errorId).style.display = 'block';
+    }
+</script>
+{% endblock %}

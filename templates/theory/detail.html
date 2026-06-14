@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+        <a href="{{ url_for('track_detail', track_id=track.id) }}" style="color: var(--text-gray); font-size: 1.5rem; text-decoration: none;">←</a>
+        <h2 style="color: var(--sky-blue); margin: 0;">{{ track.theory.title }}</h2>
+    </div>
+
+    {% for section in track.theory.sections %}
+        <div style="margin-bottom: 2.5rem;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-dark); border-bottom: 2px solid var(--border-light); padding-bottom: 0.5rem;">
+                {{ section.heading }}
+            </h3>
+            <p style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--text-dark);">
+                {{ section.text }}
+            </p>
+            {% if section.code %}
+                <pre style="background: #282C34; color: #ABB2BF; padding: 1.5rem; border-radius: 12px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 1rem; line-height: 1.5;"><code style="background: none; color: inherit; padding: 0;">{{ section.code }}</code></pre>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <div style="text-align: center; margin-top: 3rem;">
+        <a href="{{ url_for('track_detail', track_id=track.id) }}" class="btn" style="padding: 1rem 3rem; font-size: 1.2rem;">
+            Перейти к практике
+        </a>
+    </div>
+</div>
+{% endblock %}

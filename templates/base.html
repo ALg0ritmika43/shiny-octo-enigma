@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PyLearn - Интерактивная платформа Python</title>
+    <style>
+        /* Фиксированные переменные глубокой темной неоновой темы */
+        :root {
+            --bg-milky: #0B0F19;
+            --surface-white: #151F32;
+            --sky-blue: #3B82F6;
+            --sky-blue-hover: #2563EB;
+            --accent-purple: #8B5CF6;
+            --accent-green: #10B981;
+            --text-dark: #F1F5F9;
+            --text-gray: #94A3B8;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --border-light: #1E293B;
+            --code-bg: #010409;
+            --grad-hero: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+            --grad-accent: linear-gradient(135deg, #2563EB 0%, #7C3AED 100%);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.3);
+            --neon-glow: 0 0 15px rgba(59, 130, 246, 0.45);
+            --neon-success: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        /* 5. КАСТОМНЫЙ СКРОЛЛБАР СИСТЕМЫ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-milky);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 10px;
+            border: 2px solid var(--bg-milky);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--sky-blue);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-milky);
+            color: var(--text-dark);
+            line-height: 1.5;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        /* Элемент бесшовного перехода страниц */
+        .page-transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-milky);
+            z-index: 999999;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page-transition-overlay.fade-out {
+            opacity: 0;
+        }
+
+        /* 3. СТЭКЛЯННЫЙ ЭФФЕКТ (GLASSMORPHISM) ДЛЯ НАВИГАЦИИ */
+        .navbar {
+            background-color: rgba(21, 31, 50, 0.75) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 99999;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-decoration: none;
+            background: var(--grad-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.2s;
+        }
+        .navbar-brand:active { transform: scale(0.95); }
+
+        .burger-menu {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: var(--text-dark);
+            padding: 0.5rem;
+            border-radius: 8px;
+            z-index: 100000;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .nav-links a {
+            font-weight: 600;
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--text-dark);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* 4. МИКРОАНИМАЦИИ ОТКЛИКА НА ТАЧ */
+        .nav-links a:active {
+            transform: scale(0.95);
+        }
+
+        .streak-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.15));
+            color: #F59E0B;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-shadow: 0 0 10px rgba(245,158,11,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+            min-height: 82vh;
+        }
+        
+        /* 1 & 4. СВЕЧЕНИЕ И ОТКЛИК КАРТОЧЕК */
+        .card, .feature-item-card, .game-interactive-card, .speed-task {
+            background: var(--surface-white);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover, .game-interactive-card:hover, .speed-task:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: var(--neon-glow);
+        }
+
+        .card:active, .game-interactive-card:active, .speed-task:active {
+            transform: scale(0.98);
+        }
+
+        /* КНОПКИ С ГЛОУ-ЭФФЕКТОМ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--grad-accent);
+            color: white;
+            padding: 0.8rem 1.6rem;
+            border-radius: 14px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+            text-align: center;
+        }
+
+        .btn:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5), var(--neon-glow);
+            opacity: 0.95;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--sky-blue);
+            border: 2px solid var(--sky-blue);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            background: var(--sky-blue);
+            color: white;
+            box-shadow: var(--neon-glow);
+        }
+
+        /* 2. ГЛОБАЛЬНЫЙ СТИЛЬ АНИМАЦИИ ДЛЯ СКЕЛЕТОНОВ */
+        @keyframes skeleton-loading {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .skeleton-loader-item {
+            background: linear-gradient(90deg, #151F32 25%, #1E293B 50%, #151F32 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite linear;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 991px) {
+            .burger-menu { display: block; }
+            .nav-container {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: rgba(21, 31, 50, 0.95);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-bottom: 1px solid var(--border-light);
+                flex-direction: column;
+                padding: 1.5rem;
+                gap: 1.2rem;
+                box-shadow: var(--shadow-md);
+                z-index: 99998;
+            }
+            .nav-container.active { display: flex; }
+            .nav-links { flex-direction: column; width: 100%; gap: 0.6rem; }
+            .nav-links a {
+                width: 100%;
+                padding: 0.8rem;
+                background: rgba(255,255,255,0.03);
+                border-radius: 12px;
+                text-align: center;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="page-transition-overlay" id="pageTransitionOverlay"></div>
+
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="navbar-brand">PyLearn</a>
+        <button class="burger-menu" id="mobileMenuBtn" aria-label="Открыть меню">☰</button>
+        <div class="nav-container" id="mobileNavContainer">
+            <div class="nav-links">
+                {% if session.get('user_id') %}
+                    <span class="streak-badge">🔥 {{ user.streak if user else 0 }} дн.</span>
+                    <a href="{{ url_for('dashboard') }}">Обучение</a>
+                    <a href="{{ url_for('tracks') }}">Треки</a>
+                    <a href="{{ url_for('typing_trainer') }}">Тренажер</a>
+                    <a href="{{ url_for('sandbox') }}" style="color: var(--accent-green);">Песочница</a>
+                    <a href="{{ url_for('internship_hub') }}" style="color: var(--warning);">Стажировка</a>
+                    <a href="{{ url_for('games_hub') }}">Игры</a>
+                    <a href="{{ url_for('leaderboard') }}" style="color: var(--accent-purple);">Рейтинг</a>
+                    <a href="{{ url_for('profile') }}">Профиль</a>
+                    <a href="{{ url_for('logout') }}">Выйти</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Войти</a>
+                    <a href="{{ url_for('register') }}" class="btn">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+    <script>
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileNavContainer = document.getElementById('mobileNavContainer');
+        const pageTransitionOverlay = document.getElementById('pageTransitionOverlay');
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            pageTransitionOverlay.classList.add('fade-out');
+        });
+
+        document.addEventListener('click', (e) => {
+            const anchor = e.target.closest('a');
+            if (anchor && anchor.href && anchor.href.startsWith(window.location.origin) && !anchor.getAttribute('target') && !anchor.href.includes('#') && anchor.getAttribute('href') !== 'javascript:void(0);') {
+                e.preventDefault();
+                const targetUrl = anchor.href;
+                pageTransitionOverlay.classList.remove('fade-out');
+                setTimeout(() => { window.location.href = targetUrl; }, 400);
+            }
+        });
+
+        function toggleMenu(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            mobileNavContainer.classList.toggle('active');
+            mobileMenuBtn.textContent = mobileNavContainer.classList.contains('active') ? '✕' : '☰';
+        }
+
+        if ('ontouchstart' in window) {
+            mobileMenuBtn.addEventListener('touchend', toggleMenu);
+        } else {
+            mobileMenuBtn.addEventListener('click', toggleMenu);
+        }
+
+        document.addEventListener('click', (e) => {
+            if (mobileNavContainer.classList.contains('active') && !mobileNavContainer.contains(e.target) && e.target !== mobileMenuBtn) {
+                mobileNavContainer.classList.remove('active');
+                mobileMenuBtn.textContent = '☰';
+            }
+        });
+
+        // Глобальный хелпер триггера конфетти, который можно вызывать из любых подстраниц
+        window.triggerSuccessConfetti = function() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.75 },
+                colors: ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B']
+            });
+        };
+    </script>
+</body>
+</html>
